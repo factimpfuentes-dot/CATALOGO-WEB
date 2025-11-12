@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Importaciones Fuentes - E-commerce</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Font: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Iconos (Heroicons) -->
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+
+    <style>
+        /* Estilo base */
+        body {
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+        /* Animación simple para el Toast */
+        .toast {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s, visibility 0.3s, bottom 0.3s;
+        }
+        .toast.show {
+            visibility: visible;
+            opacity: 1;
+            bottom: 30px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <!-- Header -->
+    <header class="sticky top-0 bg-white shadow-md z-50">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <!-- Logo / Título -->
+            <a href="#home" class="text-2xl font-bold text-blue-700">
+                Importaciones Fuentes
+            </a>
+            
+            <!-- Carrito -->
+            <a href="#cart" class="relative flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition duration-200">
+                <ion-icon name="cart-outline" class="text-2xl"></ion-icon>
+                <span class="ml-2 hidden sm:inline">Carrito</span>
+                <!-- Contador del Carrito -->
+                <span id="cart-count" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                    0
+                </span>
+            </a>
+        </nav>
+    </header>
+
+    <!-- Contenido Principal (SPA Root) -->
+    <main id="app-root" class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <!-- El contenido se renderizará aquí -->
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white mt-12 py-8">
+        <div class="container mx-auto px-4 text-center">
+            <p>&copy; 2025 Importaciones Fuentes. Todos los derechos reservados.</p>
+            <p class="text-sm text-gray-400 mt-2">Sitio MVP creado estáticamente.</p>
+        </div>
+    </footer>
+
+    <!-- Toast/Notificación -->
+    <div id="toast-notification" class="toast fixed left-1/2 -translate-x-1/2 bottom-5 bg-gray-900 text-white px-6 py-3 rounded-lg shadow-xl">
+        Producto añadido al carrito
+    </div>
+
+
+    <!-- ======================================== -->
+    <!-- SCRIPT DE LA APLICACIÓN (LÓGICA)        -->
+    <!-- =V====================================== -->
+    <script>
+        // --- 1. BASE DE DATOS (Incrustada desde tu CSV) ---
+        // Nota: He usado un placeholder para las imágenes sin URL.
+        const products = [
+            { id: "10003", name: "ACEITUNAS NEGRAS RODAJAS", unit: "LATA 106 OZ", price: 575, category: "PRODUCTOS SECOS", subCategory: "CONSERVAS ALIMENTICIAS", image: "https://lh3.googleusercontent.com/Kp-Sou6SWZnlwf9csRYuR8TVGd1MHOg7kPW0tHrCqRyE0cbEdD6eLrAZe-5b89m6=w0" },
+            { id: "10023", name: "BANDEJA ALUM RECTANG 5 LB", unit: "UNIDAD", price: 27.6, category: "PRODUCTOS SECOS", subCategory: "DESCARTABLES", image: "" },
+            { id: "10024", name: "BOLSA KRAFT #12", unit: "PAQ. 500 UNID", price: 1265, category: "PRODUCTOS SECOS", subCategory: "DESCARTABLES", image: "" },
+            { id: "10025", name: "BOLSA KRAFT #6", unit: "PAQ. 500 UND", price: 816.5, category: "PRODUCTOS SECOS", subCategory: "DESCARTABLES", image: "" },
+            { id: "10028", name: "CEREZAS ROJA CON TALLO", unit: "GALON", price: 1381.15, category: "PRODUCTOS SECOS", subCategory: "CONSERVAS ALIMENTICIAS", image: "" },
+            { id: "10052", name: "CUCHARA PLASTICAS DESECHABLES", unit: "CAJA 1000 UND", price: 557.75, category: "PRODUCTOS SECOS", subCategory: "DESCARTABLES", image: "" },
+            { id: "10060", name: "EMPAQ POROP 1 COMP #9/USA-RD", unit: "PAQ 100 UNID", price: 485.3, category: "PRODUCTOS SECOS", subCategory: "DESCARTABLES", image: "" },
+            { id: "1680006", name: "VASO DE POROP 16 OZ-RD", unit: "PAQ 100 UNID", price: 170.2, category: "PRODUCTOS SECOS", subCategory: "DESCARTABLES", image: "" },
+            { id: "1680007", name: "VASOS PLAST TRANSL 2 OZ-RD", unit: "PAQ DE 125 UND", price: 86.25, category: "PRODUCTOS SECOS", subCategory: "DESCARTABLES", image: "" },
+            { id: "1680009", name: "TAPA PLAST P/VASO 2 OZ -RD", unit: "PAQ DE 125 UND", price: 86.25, category: "PRODUCTOS SECOS", subCategory: "DESCARTABLES", image: "" },
+            { id: "1680010", name: "BANDEJA POROPLAST #1-RD", unit: "PAQ 250 UNID", price: 328.9, category: "PRODUCTOS SECOS", subCategory: "DESCARTABLES", image: "" },
+            { id: "1680011", name: "PLATO DE POROPLAS #10,PAQ. 125", unit: "PAQ. 125", price: 379.5, category: "PRODUCTOS SECOS", subCategory: "DESCARTABLES", image: "" },
+            { id: "1680013", name: "BANDEJ PLAS P/NACHO 2 COMP-RD", unit: "PAQ. 50 UNID.", price: 174.8, category: "PRODUCTOS SECOS", subCategory: "DESCARTABLES", image: "" },
+            { id: "1680014", name: "TAPA DOM 16 OZ (PD16D)-RD", unit: "PAQ 100 UNID", price: 196.65, category: "PRODUCTOS SECOS", subCategory: "DESCARTABLES", image: "" },
+            { id: "1680015", name: "TAPA PLAST PLANA 16 OZ (PL16D)-RD", unit: "PAQ. 100 UNID", price: 180.55, category: "PRODUCTOS SECOS", subCategory: "DESCARTABLES", image: "" }
+        ];
+
+        // --- 2. ESTADO DE LA APLICACIÓN (CARRITO Y FILTROS) ---
+        let cart = {};
+        let currentSearchTerm = '';
+        let selectedCategory = 'all';
+        let selectedSubCategory = 'all';
+        const appRoot = document.getElementById('app-root');
+
+        // Cargar carrito desde localStorage
+        function loadCart() {
+            cart = JSON.parse(localStorage.getItem('cart_importaciones')) || {};
+            updateCartCount();
+        }
+
+        // Guardar carrito en localStorage
+        function saveCart() {
+            localStorage.setItem('cart_importaciones', JSON.stringify(cart));
+            updateCartCount();
+        }
+
+        // Añadir al carrito
+        function addToCart(productId, quantity = 1) {
+            const qty = parseInt(quantity, 10);
+            if (qty < 1) return; // No añadir si la cantidad es inválida
+            
+            cart[productId] = (cart[productId] || 0) + qty;
+            saveCart();
+            showToast(`${qty} ${qty > 1 ? 'productos' : 'producto'} añadido al carrito`);
+        }
+
+        // Actualizar cantidad
+        function updateCartQuantity(productId, quantity) {
+            const newQuantity = parseInt(quantity, 10);
+            if (newQuantity <= 0) {
+                delete cart[productId];
+            } else {
+                cart[productId] = newQuantity;
+            }
+            saveCart();
+            renderCartPage(); // Re-renderizar la página del carrito
+        }
+
+        // Obtener conteo total de items
+        function getCartItemCount() {
+            return Object.values(cart).reduce((sum, qty) => sum + qty, 0);
+        }
+
+        // Actualizar el ícono del carrito
+        function updateCartCount() {
+            const countEl = document.getElementById('cart-count');
+            if (countEl) countEl.textContent = getCartItemCount();
+        }
+
+        // Formatear moneda (simple)
+        function formatCurrency(amount) {
+            // Asumimos C$ (Córdobas)
+            return `C$${amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}`;
+        }
+
+
+        // --- 3. RENDERIZADO DE VISTAS (PÁGINAS) ---
+
+        /**
+         * Renderiza la Página de Inicio (Grid de Productos)
+         */
+        function renderHomePage() {
+            // Extraer categorías únicas
+            const categories = ['all', ...new Set(products.map(p => p.category))];
+            const subCategories = ['all', ...new Set(products.map(p => p.subCategory))];
+            
+            appRoot.innerHTML = `
+                <div class="mb-8">
+                    <h1 class="text-3xl font-bold text-gray-900 mb-4">Nuestros Productos</h1>
+                    <!-- Buscador -->
+                    <div class="relative">
+                        <input 
+                            type="text" 
+                            id="search-bar"
+                            placeholder="Buscar por nombre o ID Item..." 
+                            class="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            oninput="handleSearch(this.value)"
+                            value="${currentSearchTerm}"
+                        >
+                        <div class="absolute top-0 right-0 p-3.5">
+                            <ion-icon name="search-outline" class="text-gray-400 text-xl"></ion-icon>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filtros -->
+                <div class="flex flex-col md:flex-row gap-6 mb-8">
+                    <!-- Filtros por Categoría -->
+                    <div class="flex-1">
+                        <h2 class="text-xl font-semibold mb-3">Categorías</h2>
+                        <div id="category-filters" class="flex flex-wrap gap-2">
+                            ${categories.map(cat => `
+                                <button 
+                                    onclick="handleFilter('category', '${cat}')"
+                                    data-filter-group="category"
+                                    data-filter-value="${cat}"
+                                    class="filter-btn ${cat === selectedCategory ? 'filter-active' : 'filter-inactive'}">
+                                    ${cat === 'all' ? 'Todas' : cat}
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <!-- Filtros por Sub-Categoría -->
+                    <div class="flex-1">
+                        <h2 class="text-xl font-semibold mb-3">Sub-Categorías</h2>
+                        <div id="subcategory-filters" class="flex flex-wrap gap-2">
+                            ${subCategories.map(subCat => `
+                                <button 
+                                    onclick="handleFilter('subCategory', '${subCat}')"
+                                    data-filter-group="subCategory"
+                                    data-filter-value="${subCat}"
+                                    class="filter-btn ${subCat === selectedSubCategory ? 'filter-active' : 'filter-inactive'}">
+                                    ${subCat === 'all' ? 'Todas' : subCat}
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grid de Productos -->
+                <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    <!-- Los productos se renderizarán aquí -->
+                </div>
+            `;
+
+            // CSS para los botones de filtro (añadido dinámicamente)
+            const styleId = 'filter-btn-styles';
+            if (!document.getElementById(styleId)) {
+                const style = document.createElement('style');
+                style.id = styleId;
+                style.innerHTML = `
+                    .filter-btn {
+                        flex-shrink: 0;
+                        padding: 0.5rem 1rem;
+                        font-size: 0.875rem;
+                        font-weight: 500;
+                        border-radius: 9999px;
+                        transition: all 0.2s;
+                        border: 1px solid #D1D5DB; /* border-gray-300 */
+                        cursor: pointer;
+                    }
+                    .filter-inactive {
+                        color: #374151; /* text-gray-700 */
+                        background-color: #FFFFFF; /* bg-white */
+                    }
+                    .filter-inactive:hover {
+                        background-color: #F3F4F6; /* hover:bg-gray-100 */
+                    }
+                    .filter-active {
+                        color: #FFFFFF; /* text-white */
+                        background-color: #2563EB; /* bg-blue-600 */
+                        border-color: #2563EB; /* border-blue-600 */
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            // Renderizar la lista de productos inicial
+            filterAndRenderProducts();
+        }
+
+        /**
+         * Filtra y renderiza la lista de productos
+         */
+        function filterAndRenderProducts() {
+            const grid = document.getElementById('product-grid');
+            if (!grid) return; // Salir si la vista no es la home
+
+            // 1. Aplicar filtros
+            let filteredProducts = products.filter(product => {
+                const term = currentSearchTerm.toLowerCase();
+                const nameMatch = product.name.toLowerCase().includes(term);
+                const idMatch = product.id.toLowerCase().includes(term);
+                const categoryMatch = (selectedCategory === 'all') || (product.category === selectedCategory);
+                const subCategoryMatch = (selectedSubCategory === 'all') || (product.subCategory === selectedSubCategory);
+
+                return (nameMatch || idMatch) && categoryMatch && subCategoryMatch;
+            });
+
+            // 2. Renderizar HTML
+            if (filteredProducts.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <ion-icon name="sad-outline" class="text-6xl text-gray-400"></ion-icon>
+                        <h3 class="text-2xl font-semibold text-gray-700 mt-4">No se encontraron productos</h3>
+                        <p class="text-gray-500 mt-2">Intenta ajustar tu búsqueda o filtros.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let productsHTML = filteredProducts.map(product => `
+                <div class="bg-white rounded-lg shadow-md overflow-hidden transition-all duration-300 hover:shadow-xl">
+                    <a href="#product/${product.id}" class="block">
+                        <img 
+                            src="${product.image || 'https://placehold.co/600x400/eeeeee/cccccc?text=Producto'}" 
+                            alt="${product.name}" 
+                            class="w-full h-48 object-cover"
+                            onerror="this.src='https://placehold.co/600x400/eeeeee/cccccc?text=Producto'; this.onerror=null;"
+                        >
+                    </a>
+                    <div class="p-4">
+                        <a href="#product/${product.id}" class="block">
+                            <h3 class="text-lg font-semibold text-gray-800 truncate" title="${product.name}">${product.name}</h3>
+                        </a>
+                        <p class="text-sm text-gray-500 mt-1">${product.unit}</p>
+                        <div class="flex justify-between items-center mt-4">
+                            <span class="text-xl font-bold text-blue-700">${formatCurrency(product.price)}</span>
+                            <!-- Botón para ir al detalle del producto, donde ahora se elige la cantidad -->
+                            <a href="#product/${product.id}" class="p-2 bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition">
+                                <ion-icon name="cart-outline" class="text-xl"></ion-icon>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            grid.innerHTML = productsHTML;
+        }
+
+        /**
+         * Maneja la entrada de búsqueda
+         */
+        function handleSearch(term) {
+            currentSearchTerm = term;
+            filterAndRenderProducts();
+        }
+
+        /**
+         * Maneja el clic en un filtro
+         */
+        function handleFilter(type, value) {
+            // 1. Actualizar estado
+            if (type === 'category') {
+                selectedCategory = value;
+            } else if (type === 'subCategory') {
+                selectedSubCategory = value;
+            }
+
+            // 2. Actualizar estilos de botones
+            const group = type === 'category' ? 'category' : 'subCategory';
+            const buttons = document.querySelectorAll(`button[data-filter-group="${group}"]`);
+            
+            buttons.forEach(btn => {
+                if (btn.getAttribute('data-filter-value') === value) {
+                    btn.classList.add('filter-active');
+                    btn.classList.remove('filter-inactive');
+                } else {
+                    btn.classList.add('filter-inactive');
+                    btn.classList.remove('filter-active');
+                }
+            });
+
+            // 3. Re-renderizar productos
+            filterAndRenderProducts();
+        }
+
+
+        /**
+         * Renderiza la Página de Detalle del Producto
+         */
+        function renderProductDetailPage(productId) {
+            const product = products.find(p => p.id === productId);
+
+            if (!product) {
+                appRoot.innerHTML = `
+                    <h1 class="text-2xl font-bold">Producto no encontrado</h1>
+                    <a href="#home" class="text-blue-600 hover:underline">&larr; Volver al inicio</a>
+                `;
+                return;
+            }
+
+            // Determinar la cantidad actual en el carrito o 1 por defecto
+            const initialQuantity = cart[productId] || 1; 
+
+            appRoot.innerHTML = `
+                <div class="bg-white rounded-lg shadow-xl overflow-hidden max-w-4xl mx-auto">
+                    <div class="grid grid-cols-1 md:grid-cols-2">
+                        <!-- Imagen del Producto -->
+                        <div>
+                            <img 
+                                src="${product.image || 'https://placehold.co/600x600/eeeeee/cccccc?text=Producto'}" 
+                                alt="${product.name}" 
+                                class="w-full h-64 md:h-full object-cover"
+                                onerror="this.src='https://placehold.co/600x600/eeeeee/cccccc?text=Producto'; this.onerror=null;"
+                            >
+                        </div>
+
+                        <!-- Detalles del Producto -->
+                        <div class="p-6 md:p-8">
+                            <a href="#home" class="text-sm text-blue-600 hover:underline mb-4 inline-block">&larr; Volver a productos</a>
+                            <h1 class="text-3xl font-bold text-gray-900 mb-2">${product.name}</h1>
+                            <p class="text-gray-600 text-lg mb-4">${product.unit}</p>
+                            
+                            <span class="text-4xl font-bold text-blue-700 mb-6 block">${formatCurrency(product.price)}</span>
+                            
+                            <p class="text-gray-700 mb-4">
+                                <span class="font-semibold">Categoría:</span> ${product.subCategory}
+                            </p>
+                            <p class="text-gray-700 mb-6">
+                                <span class="font-semibold">ID Item:</span> ${product.id}
+                            </p>
+                            
+                            <!-- Selector de Cantidad -->
+                            <div class="flex items-center space-x-4 mb-6">
+                                <label for="product-quantity" class="font-semibold text-gray-700">Cantidad:</label>
+                                <input 
+                                    type="number" 
+                                    id="product-quantity" 
+                                    value="${initialQuantity}" 
+                                    min="1" 
+                                    class="w-20 p-2 border border-gray-300 rounded-lg text-center focus:ring-blue-500 focus:border-blue-500"
+                                >
+                            </div>
+
+                            <button onclick="
+                                const qty = document.getElementById('product-quantity').value;
+                                addToCart('${product.id}', qty);
+                            " class="w-full flex justify-center items-center px-6 py-3 bg-blue-600 text-white text-lg font-semibold rounded-lg shadow hover:bg-blue-700 transition duration-200">
+                                <ion-icon name="cart-outline" class="text-2xl mr-2"></ion-icon>
+                                Añadir al Carrito
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        /**
+         * Renderiza la Página del Carrito
+         */
+        function renderCartPage() {
+            if (getCartItemCount() === 0) {
+                appRoot.innerHTML = `
+                    <div class="text-center py-20">
+                        <ion-icon name="cart-outline" class="text-8xl text-gray-300"></ion-icon>
+                        <h1 class="text-3xl font-bold text-gray-800 mt-4 mb-2">Tu carrito está vacío</h1>
+                        <p class="text-gray-600 mb-6">Parece que aún no has añadido productos.</p>
+                        <a href="#home" class="px-6 py-3 bg-blue-600 text-white text-lg font-semibold rounded-lg shadow hover:bg-blue-700 transition duration-200">
+                            Ver Productos
+                        </a>
+                    </div>
+                `;
+                return;
+            }
+
+            let cartItemsHTML = '';
+            let subtotal = 0;
+
+            for (const [productId, quantity] of Object.entries(cart)) {
+                const product = products.find(p => p.id === productId);
+                if (!product) continue;
+
+                const lineTotal = product.price * quantity;
+                subtotal += lineTotal;
+
+                cartItemsHTML += `
+                    <div class="flex items-center gap-4 py-4 border-b border-gray-200">
+                        <img 
+                            src="${product.image || 'https://placehold.co/100x100/eeeeee/cccccc?text=Producto'}" 
+                            alt="${product.name}" 
+                            class="w-20 h-20 rounded-lg object-cover"
+                            onerror="this.src='https://placehold.co/100x100/eeeeee/cccccc?text=Producto'; this.onerror=null;"
+                        >
+                        <div class="flex-grow">
+                            <h3 class="font-semibold text-gray-800">${product.name}</h3>
+                            <p class="text-sm text-gray-500">${product.unit}</p>
+                            <p class="text-sm text-gray-500">${formatCurrency(product.price)} c/u</p>
+                        </div>
+                        <!-- Selector de Cantidad -->
+                        <div class="flex items-center border border-gray-300 rounded-lg">
+                            <button onclick="updateCartQuantity('${product.id}', ${quantity - 1})" class="px-3 py-1 text-lg font-bold text-gray-700 hover:bg-gray-100 rounded-l-lg">-</button>
+                            <input 
+                                type="number" 
+                                value="${quantity}" 
+                                onchange="updateCartQuantity('${product.id}', this.value)" 
+                                class="w-12 text-center border-l border-r border-gray-300 outline-none"
+                            >
+                            <button onclick="updateCartQuantity('${product.id}', ${quantity + 1})" class="px-3 py-1 text-lg font-bold text-gray-700 hover:bg-gray-100 rounded-r-lg">+</button>
+                        </div>
+                        <div class="w-24 text-right">
+                            <span class="font-semibold text-gray-800">${formatCurrency(lineTotal)}</span>
+                        </div>
+                        <button onclick="updateCartQuantity('${product.id}', 0)" class="text-gray-400 hover:text-red-500 transition ml-2">
+                            <ion-icon name="trash-outline" class="text-2xl"></ion-icon>
+                        </button>
+                    </div>
+                `;
+            }
+            
+            // Asumimos impuestos ya incluidos o 0 para MVP
+            const total = subtotal;
+
+            appRoot.innerHTML = `
+                <h1 class="text-3xl font-bold text-gray-900 mb-6">Tu Carrito de Compras</h1>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Lista de Items -->
+                    <div class="lg:col-span-2 bg-white rounded-lg shadow-md p-6">
+                        ${cartItemsHTML}
+                    </div>
+
+                    <!-- Resumen del Pedido -->
+                    <div class="lg:col-span-1">
+                        <div class="bg-white rounded-lg shadow-md p-6 sticky top-24">
+                            <h2 class="text-2xl font-semibold mb-4 border-b pb-3">Resumen del Pedido</h2>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-gray-600">Subtotal:</span>
+                                <span class="font-semibold">${formatCurrency(subtotal)}</span>
+                            </div>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-gray-600">Envío:</span>
+                                <span class="font-semibold">A coordinar</span>
+                            </div>
+                            <div class="border-t my-4"></div>
+                            <div class="flex justify-between items-center text-xl font-bold mb-6">
+                                <span>Total:</span>
+                                <span>${formatCurrency(total)}</span>
+                            </div>
+                            <a href="#checkout" class="w-full text-center px-6 py-3 bg-blue-600 text-white text-lg font-semibold rounded-lg shadow hover:bg-blue-700 transition duration-200">
+                                Proceder al Pago
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        /**
+         * Renderiza la Página de Checkout (Resumen estático)
+         */
+        function renderCheckoutPage() {
+            if (getCartItemCount() === 0) {
+                window.location.hash = '#cart'; // Volver si el carrito está vacío
+                return;
+            }
+
+            let orderSummaryText = "Resumen de mi pedido:\n\n";
+            let total = 0;
+
+            for (const [productId, quantity] of Object.entries(cart)) {
+                const product = products.find(p => p.id === productId);
+                if (product) {
+                    const lineTotal = product.price * quantity;
+                    total += lineTotal;
+                    orderSummaryText += `* ${product.name} (x${quantity}) - ${formatCurrency(lineTotal)}\n`;
+                }
+            }
+            orderSummaryText += `\nTotal del Pedido: ${formatCurrency(total)}`;
+            
+            // Limpiar carrito después de "comprar"
+            // No lo limpiamos aquí, solo en el botón final.
+            
+            appRoot.innerHTML = `
+                <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-xl p-8">
+                    <h1 class="text-3xl font-bold text-gray-900 mb-4 text-center">Finalizar Pedido</h1>
+                    <p class="text-gray-600 text-center mb-6">
+                        ¡Casi listo! Para completar tu pedido, por favor contacta a nuestro equipo de ventas 
+                        (por WhatsApp o Correo) con el siguiente resumen de tu pedido.
+                    </p>
+
+                    <div class="my-6">
+                        <label for="orderSummary" class="block text-sm font-medium text-gray-700 mb-2">
+                            Resumen de tu pedido (puedes copiar este texto):
+                        </label>
+                        <textarea id="orderSummary" readonly class="w-full h-64 p-3 bg-gray-50 border border-gray-300 rounded-lg font-mono text-sm text-gray-800 focus:ring-blue-500 focus:border-blue-500">${orderSummaryText}</textarea>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <button onclick="copyOrderToClipboard()" class="w-full flex justify-center items-center px-6 py-3 bg-blue-600 text-white text-lg font-semibold rounded-lg shadow hover:bg-blue-700 transition duration-200">
+                            <ion-icon name="clipboard-outline" class="text-2xl mr-2"></ion-icon>
+                            Copiar Pedido
+                        </button>
+                        <a href="#home" onclick="clearCartAndGoHome()" class="w-full text-center px-6 py-3 bg-gray-600 text-white text-lg font-semibold rounded-lg shadow hover:bg-gray-700 transition duration-200">
+                            Finalizar y Volver
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+
+
+        // --- 4. UTILIDADES (Toast, Copiar, etc.) ---
+
+        // Mostrar Toast
+        let toastTimeout;
+        function showToast(message) {
+            const toast = document.getElementById('toast-notification');
+            toast.textContent = message;
+            toast.classList.add('show');
+
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000); // Ocultar después de 3 segundos
+        }
+
+        // Copiar al portapapeles
+        function copyOrderToClipboard() {
+            const textarea = document.getElementById('orderSummary');
+            textarea.select();
+            // document.execCommand('copy') es más compatible en iframes que navigator.clipboard
+            try {
+                document.execCommand('copy');
+                showToast('¡Pedido copiado al portapapeles!');
+            } catch (err) {
+                showToast('Error al copiar. Copia el texto manualmente.');
+            }
+        }
+        
+        // Limpiar carrito (al finalizar)
+        function clearCartAndGoHome() {
+            cart = {};
+            saveCart();
+            // No es necesario ir a #home aquí, el <a> ya lo hace.
+            // Solo nos aseguramos de que el carrito esté limpio.
+        }
+
+        // --- 5. ROUTER Y INICIALIZACIÓN ---
+
+        // Router simple basado en Hash
+        function router() {
+            const path = window.location.hash || '#home';
+            
+            // Limpiar estado de filtros si salimos de la home
+            if (path !== '#home') {
+                 currentSearchTerm = '';
+                 selectedCategory = 'all';
+                 selectedSubCategory = 'all';
+            }
+
+            if (path === '#home') {
+                renderHomePage();
+            } else if (path.startsWith('#product/')) {
+                const productId = path.split('/')[1];
+                renderProductDetailPage(productId);
+            } else if (path === '#cart') {
+                renderCartPage();
+            } else if (path === '#checkout') {
+                renderCheckoutPage();
+            } else {
+                renderHomePage(); // Fallback
+            }
+            window.scrollTo(0, 0); // Scroll al inicio en cada cambio de "página"
+        }
+
+        // Inicializar la aplicación
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCart();
+            router(); // Cargar la vista inicial
+        });
+
+        // Escuchar cambios en el hash (navegación)
+        window.addEventListener('hashchange', router);
+
+    </script>
+</body>
+</html>
