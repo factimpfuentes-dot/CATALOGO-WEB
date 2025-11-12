@@ -98,22 +98,57 @@
             { id: "1680015", name: "TAPA PLAST PLANA 16 OZ (PL16D)-RD", unit: "PAQ. 100 UNID", price: 180.55, category: "PRODUCTOS SECOS", subCategory: "DESCARTABLES", image: "" }
         ];
 
-        // --- 2. ESTADO DE LA APLICACIÓN (CARRITO Y FILTROS) ---
+        // --- 2. GESTIÓN DEL ALMACENAMIENTO (Solución al error de 'Access to storage not allowed' en iframes/Vercel) ---
+        const CART_KEY = 'cart_importaciones';
+        let storageMechanism; // Variable que guarda si usaremos localStorage o sessionStorage
+
+        // Función de prueba para determinar qué almacenamiento usar
+        function getStorageMechanism() {
+            try {
+                // Intenta usar localStorage
+                localStorage.setItem('test', '1');
+                localStorage.removeItem('test');
+                return localStorage;
+            } catch (e) {
+                // Si falla (error de permisos), usa sessionStorage como respaldo
+                console.warn("localStorage bloqueado. Usando sessionStorage como respaldo.");
+                return sessionStorage;
+            }
+        }
+        
+        // Función para cargar datos
+        function loadFromStorage() {
+            if (!storageMechanism) {
+                storageMechanism = getStorageMechanism();
+            }
+            const storedCart = storageMechanism.getItem(CART_KEY);
+            return storedCart ? JSON.parse(storedCart) : {};
+        }
+
+        // Función para guardar datos
+        function saveToStorage(data) {
+            if (!storageMechanism) {
+                storageMechanism = getStorageMechanism();
+            }
+            storageMechanism.setItem(CART_KEY, JSON.stringify(data));
+        }
+
+        // --- 3. ESTADO DE LA APLICACIÓN (CARRITO Y FILTROS) ---
         let cart = {};
         let currentSearchTerm = '';
         let selectedCategory = 'all';
         let selectedSubCategory = 'all';
         const appRoot = document.getElementById('app-root');
 
-        // Cargar carrito desde localStorage
+        // Cargar carrito
         function loadCart() {
-            cart = JSON.parse(localStorage.getItem('cart_importaciones')) || {};
+            cart = loadFromStorage();
             updateCartCount();
         }
 
-        // Guardar carrito en localStorage
+        // Guardar carrito
         function saveCart() {
-            localStorage.setItem('cart_importaciones', JSON.stringify(cart));
+            saveToStorage(cart);
             updateCartCount();
         }
 
@@ -157,7 +192,7 @@
         }
 
 
-        // --- 3. RENDERIZADO DE VISTAS (PÁGINAS) ---
+        // --- 4. RENDERIZADO DE VISTAS (PÁGINAS) ---
 
         /**
          * Renderiza la Página de Inicio (Grid de Productos)
@@ -582,7 +617,7 @@
         }
 
 
-        // --- 4. UTILIDADES (Toast, Copiar, etc.) ---
+        // --- 5. UTILIDADES (Toast, Copiar, etc.) ---
 
         // Mostrar Toast
         let toastTimeout;
@@ -618,7 +653,7 @@
             // Solo nos aseguramos de que el carrito esté limpio.
         }
 
-        // --- 5. ROUTER Y INICIALIZACIÓN ---
+        // --- 6. ROUTER Y INICIALIZACIÓN ---
 
         // Router simple basado en Hash
         function router() {
